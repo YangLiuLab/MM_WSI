@@ -1,4 +1,5 @@
-# MM_WSI
+# A multi-modal whole-slide image processing pipeline for quantitative mapping of tissue architecture, histopathology, and tissue microenvironment
+
 ## 1. Data scope
     This data set is the example data for multi-modal whole-slide image processing pipeline.
     This data is collected for multi-layer reconstruction, multi-tile stitching, multi-cycle alignment and multi-modal registration.
