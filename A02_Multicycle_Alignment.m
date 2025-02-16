@@ -1,44 +1,32 @@
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Main code for multi-cycle alignment.
-%
-% Related Reference:
-% "A multi-modal image processing pipeline for quantitative 
-% sub-cellular mapping of tissue architecture, histopathology, 
-% and tissue microenvironment"
-%
-% last modified on 09/13/2024
-% by Maomao Chen, Yang Liu (liuy46@illinois.edu)
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% register different cycles
 clc;clear all;close all;
 
 % writing parameters
 options.message   = false;
 options.overwrite = true;
 
-%% Parameter settings
-% 1. set the folder path of the reference image
-refPath = 'D:\Example Data\GR1000426_Cy2\Stitch\';
+%% Setting area
 
-% 2. set the folder path of the images to be aligned
-movePath = 'D:\Example Data\GR1000426_Cy4\Stitch\';
+% 1. set crop parameters
+% sw480_5Fu_3d_Cy1
+% 1.1 Set the coordinate of the starting point [x,y]
+sPoint = [672,640];
+% 1.2 Set the size of the crop area [width,hight]
+sizeCut = [19296,20352];
 
-% 3. set the output folder
-outputPath = 'D:\Example Data\Multi_Cycle_Register\';
-mkdir(outputPath);
 
-% 4. set crop parameters
-% 4.1 Set the coordinate of the starting point [x,y]
-sPoint = [100,500];
-% 4.2 Set the size of the crop area [width,hight]
-sizeCut = [10000,7500];
+% 2. set the folder path of the reference image
+refPath = 'F:\231030_BFStitch\SW480_R_Cy1\';
 
-% 5. set the threshold for SURF Features detection
-metric_threshold = 10000;	% Larger threshold returns fewer feature points
+% 3. set the folder path of the register image
+movePathPart = 'F:\231030_BFStitch\SW480_R_Cy';
+
 
 %% get ref fluo image
 % crop images
 ifCrop = 1;
 if ifCrop
+	regPath = strcat(refPath,'Register'); mkdir(regPath);
 	myFiles = dir(refPath);
 	for iFile = 1:length(myFiles)
 		if ~(myFiles(iFile).isdir)
@@ -47,7 +35,7 @@ if ifCrop
 			
 			imgRead = imread(strcat(refPath,fileName));
 			imgCrop = imgRead(sPoint(2):sPoint(2)+sizeCut(2)-1,sPoint(1):sPoint(1)+sizeCut(1)-1);
-			nameWrite = strcat(outputPath,cur_name,'_Reg.tiff');
+			nameWrite = strcat(regPath,'\',cur_name,'_Reg.tiff');
 			saveastiff(uint16(imgCrop),nameWrite,options);
 		end
 	end
@@ -87,6 +75,10 @@ figure();imshow(imgRef,[]);
 clear imgRefBuff;
 
 %% get move fluo image
+
+for num = 2:7
+movePath = strcat(movePathPart,num2str(num),'\')
+
 imgMoveBuff = [];
 myFiles = dir(movePath);
 for iFile = 1:length(myFiles)
@@ -126,6 +118,7 @@ clear imgMoveBuff;
 %% SIFT registration
 
 % Detect SIFT features in ref images
+metric_threshold = 10000;	% Larger threshold returns fewer feature points
 metric_step = 1000;
 maxPoint = 100000;
 minPoint = 10000;
@@ -183,6 +176,7 @@ registeredImage = imwarp(imgMove, tform, 'OutputView', imref2d(size(imgRef)));
 % return;
 
 %% register and rewrite all the files
+regPath = strcat(movePath,'Register'); mkdir(regPath);
 myFiles = dir(movePath);
 for iFile = 1:length(myFiles)
 	if ~(myFiles(iFile).isdir)
@@ -194,13 +188,38 @@ for iFile = 1:length(myFiles)
 		
 		imgReg = imwarp(imgCrop,tform,'OutputView',imref2d(size(imgCrop)));
 		
-		nameWrite = strcat(outputPath,cur_name,'_Reg.tiff');
+		nameWrite = strcat(regPath,'\',cur_name,'_Reg.tiff');
 		saveastiff(uint16(imgReg),nameWrite,options);
 	end
 end
 
+end
+
 return;
 
+%% Image transform using imageJ parameters
+tMatrix = [[0.999977268700612, 0.006742557531337, 19.36449307701678]', [-0.006742557531337, 0.999977268700612, -49.47662952840892]',[0,0,1]'];
+tform = affine2d(tMatrix);
 
+options.message   = false;
+options.overwrite = true;
+
+savePath = 'G:\00_MultiplexData\JX_Data\02-07-2023';
+rstPath = 'G:\00_MultiplexData\JX_Data\02-07-2023\sw480-Crl_Cy5\DecRslt';
+
+fileList = [{'sw480-Crl_Cy5_Ro1_Co3_Ex470_Em510_Dec.tiff'},{'sw480-Crl_Cy5_Ro1_Co3_Ex530_Em572_Dec.tiff'},...
+			{'sw480-Crl_Cy5_Ro1_Co3_Ex589_Em615_Dec.tiff'},{'sw480-Crl_Cy5_Ro1_Co3_Ex650_Em676_Dec.tiff'}];
+
+for i = 1:length(fileList)
+	fileName = fileList{i};
+	nameRead = strcat(rstPath,'\',fileName);
+	imgCy2 = single(imread(nameRead,'tiff',1));
+	imgNew = imwarp(imgCy2,tform,'OutputView',imref2d(size(imgCy2)));
+	nameWrite = strcat(savePath,'\',fileName);
+	saveastiff(uint16(imgNew),nameWrite,options);
+end
+
+
+return;
 
 

@@ -1,44 +1,34 @@
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Main code for region-based deconvolution, phase retreival and 
-% multi-tile stitching.
-%
-% Related Reference:
-% "A multi-modal image processing pipeline for quantitative 
-% sub-cellular mapping of tissue architecture, histopathology, 
-% and tissue microenvironment"
-%
-% last modified on 09/13/2024
-% by Maomao Chen, Yang Liu (liuy46@illinois.edu)
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 clc; close all; clear all;
 addpath([pwd filesep 'subfunctions']);
-javaaddpath([matlabroot filesep 'java' filesep 'DeconvolutionLab_2.jar'])
 
-%% Parameter settings
+%% Setting area
+
 % 1. Set data path
-dataPath = 'D:\Example Data\';
+dataPath = 'E:\SW480_drug_treatment_R2_RawData\SW480_Crl_4h_Cy2\';
 
-% 2. Set path of the region-based PSFs
-psfPath = 'D:\230801_PSF\';
-
-% 3. Select deconvolution method
+% 2. Set deconvolution method
 % 0: Fast deconvolution with lower accuracy
 % 1: Slow deconvolution with higher accurarcy
-Decon_Method = 0;
+is_RL_Recon = 0;
 
-% 4. Regularization parameter for phase retrieval
+% 3. Regularization parameter and stepsize for phase recon
 rPara = 1e-5;
+stepSize = 1*1e-6;		% mm
 
-% 5. Stepsize along the z-axis
-stepSize = 2*1e-6;		% meter
+% 4. Phase or Fluorescence
+is_Phase = 1;
+is_Fluo = 1;
 
-% 6. Open a dialog box to select data
+% 5. Set path of the region-based PSFs
+psfPath = 'E:\230801_PSF\';
+javaaddpath([matlabroot filesep 'java' filesep 'DeconvolutionLab_2.jar'])
+
 [dataName,imgPath] = uigetfile([dataPath,'*.*']);
 
 
-%% Start region-based deconvolution and phase retrival
-focusMx = F00_FluoAndPhaseRecon(imgPath,psfPath,Decon_Method,rPara,stepSize,1,1);
+%% Perform phase and fluorescence recon
+focusMx = F00_FluoAndPhaseRecon(imgPath,psfPath,is_RL_Recon,rPara,stepSize,is_Phase,is_Fluo);
 
 return;
 
